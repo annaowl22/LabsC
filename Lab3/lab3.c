@@ -214,8 +214,8 @@ int main(int argc, char *argv[]){
     int absent;
 
     while(fread(&buff,1,1,input_file)==1){
-        if(buff == 0x20){
-            if(word_buff){
+        if(!isalpha(buff)){
+            if(word_buff && size!=0){
                 word_buff[size] = '\0';
                 ht_put(Word_Hash_Tab,const char*, int, word_buff,i,absent,ht_str_hash,ht_str_eq);
                 if(absent){
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]){
                 capacity = 0;
                 size = 0;
             }
-        }else if(isalpha(buff)){
+        }else {
             if(size + 1 >= capacity){
                 capacity = capacity == 0 ? 16 : capacity * 2;
                 char *temp = realloc(word_buff, capacity);
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]){
             word_buff[size++] = buff;
         }
     }
-    if(word_buff){
+    if(word_buff && size!=0){
         word_buff[size] = '\0';
         ht_put(Word_Hash_Tab,const char*, int, word_buff,i,absent,ht_str_hash,ht_str_eq);
         if(absent){
@@ -256,10 +256,10 @@ int main(int argc, char *argv[]){
     fclose(input_file);
 
     for(size_t ind = 0; ind < ht_end(Word_Hash_Tab);ind++){
-        if(!ht_valid(Word_Hash_Tab,ind)) continue;
+        if(!ht_valid(Word_Hash_Tab,ind)||strlen(ht_key(Word_Hash_Tab,ind))==0) continue;
         printf("Слово: %s\n", ht_key(Word_Hash_Tab,ind));
         ht_get(Word_Hash_Tab,ht_key(Word_Hash_Tab,ind),i,ht_str_hash,ht_str_eq);
-        printf("В тексте раз: %zd\n", i);
+        printf("В тексте раз: %d\n", ht_value(Word_Hash_Tab,i));
     }
     ht_destroy(Word_Hash_Tab);
     
