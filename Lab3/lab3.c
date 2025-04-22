@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
 
-#define WORD 256
-#define PRIME 103
 
 //Структура Хэш-таблицы
 #define HT(key_type, value_type) struct { \
@@ -167,13 +167,23 @@
 #define ht_begin(h) (0)
 #define ht_end(h) ((h).capacity)
 
-#define ht_delete(h) do {\
+#define ht_destroy(h) do {\
     free((h).flags);\
     free((h).keys);\
     free((h).values);\
 } while (0)
 
+static inline size_t ht_str_hash(const char *s) {
+	size_t h = (size_t) *s;
+	if (h) {
+		for(++s; *s; ++s) {
+			h = (h << 5) - h + (size_t) *s;
+		}
+	}
+	return h;
+}
 
+#define ht_str_eq(a, b) (strcmp((a), (b)) == 0)
 
 int main(int argc, char *argv[]){
 
@@ -187,8 +197,71 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
+    //Проверка на открытие файла
+    FILE *input_file = fopen(argv[1],"rb");
+    if(input_file == NULL){
+        printf("Не удалось открыть файл\n");
+        return 404;
+    }
 
+    HT(const char*,int) Word_Hash_Tab;
+    ht_init(Word_Hash_Tab);
+    char buff;
+    char* word_buff = NULL;
+    size_t capacity = 0;
+    size_t size = 0;
+    size_t i;
+    int absent;
 
+    while(fread(&buff,1,1,input_file)==1){
+        if(buff == 0x20){
+            if(word_buff){
+                word_buff[size] = '\0';
+                ht_put(Word_Hash_Tab,const char*, int, word_buff,i,absent,ht_str_hash,ht_str_eq);
+                if(absent){
+                    Word_Hash_Tab.values[i] = 1;
+                }else{
+                    Word_Hash_Tab.values[i] += 1;
+                }
+                word_buff = NULL;
+                capacity = 0;
+                size = 0;
+            }
+        }else if(isalpha(buff)){
+            if(size + 1 >= capacity){
+                capacity = capacity == 0 ? 16 : capacity * 2;
+                char *temp = realloc(word_buff, capacity);
+                if (temp == NULL){
+                    free(word_buff);
+                    ht_destroy(Word_Hash_Tab);
+                    fclose(input_file);
+                    perror("Memory allocation failed");
+                    return 1;
+                }
+                word_buff = temp;
+            }
+            word_buff[size++] = buff;
+        }
+    }
+    if(word_buff){
+        word_buff[size] = '\0';
+        ht_put(Word_Hash_Tab,const char*, int, word_buff,i,absent,ht_str_hash,ht_str_eq);
+        if(absent){
+            Word_Hash_Tab.values[i] = 1;
+        }else{
+            Word_Hash_Tab.values[i] += 1;
+        }
+    }
+    free(word_buff);
+    fclose(input_file);
+
+    for(size_t ind = 0; ind < ht_end(Word_Hash_Tab);ind++){
+        if(!ht_valid(Word_Hash_Tab,ind)) continue;
+        printf("Слово: %s\n", ht_key(Word_Hash_Tab,ind));
+        ht_get(Word_Hash_Tab,ht_key(Word_Hash_Tab,ind),i,ht_str_hash,ht_str_eq);
+        printf("В тексте раз: %zd\n", i);
+    }
+    ht_destroy(Word_Hash_Tab);
     
     return 0;
 }
