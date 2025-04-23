@@ -1,0 +1,16 @@
+[2025-04-23 08:04:34] [DEBUG] Сообщение об отладке
+[2025-04-23 08:04:34] [INFO] Программа начала выполнение
+[2025-04-23 08:04:34] [WARNING] Warning!
+[2025-04-23 08:04:34] [ERROR] Critical error occurred!
+Stack trace:
+  ./lab4comp(+0x17b4) [0x6002a5abe7b4]
+  /lib/x86_64-linux-gnu/libpthread.so.0(+0x8609) [0x7946f7d5d609]
+  /lib/x86_64-linux-gnu/libc.so.6(clone+0x43) [0x7946f7c82353]
+[2025-04-23 08:06:12] [DEBUG] Сообщение об отладке
+[2025-04-23 08:06:12] [INFO] Программа начала выполнение
+[2025-04-23 08:06:12] [WARNING] Warning!
+[2025-04-23 08:06:12] [ERROR] Critical error occurred!
+Stack trace:
+  ./lab4comp(+0x17b4) [0x575b2ceac7b4]
+  /lib/x86_64-linux-gnu/libpthread.so.0(+0x8609) [0x71ab86efe609]
+  /lib/x86_64-linux-gnu/libc.so.6(clone+0x43) [0x71ab86e23353]
