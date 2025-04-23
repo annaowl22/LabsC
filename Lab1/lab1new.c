@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#pragma pack(push, 1) // Отключаем выравнивание для структур
+#pragma pack(push, 1)
 
 // Структура локального заголовка файла в ZIP
 typedef struct {
@@ -19,7 +19,7 @@ typedef struct {
     uint16_t extra_length;
 } LocalFileHeader;
 
-#pragma pack(pop) // Восстанавливаем выравнивание
+#pragma pack(pop)
 
 bool check_jpeg_end(FILE *file) {
     int bytes[2];
@@ -70,10 +70,16 @@ void process_zip(FILE *file) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Использование: %s <имя_файла>\n", argv[0]);
+    
+    if(argc > 2){
+        printf("Неверное количество аргументов. Должно быть только одно имя файла\n");
         return 1;
     }
+    if(argc==1){
+        printf("Не выбран файл для проверки\n");
+        return 1;
+    }
+
     
     FILE *file = fopen(argv[1], "rb");
     if (!file) {
