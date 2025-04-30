@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -5,14 +6,15 @@
 #include <ctype.h>
 #include <math.h>
 
+
 static inline size_t ht_str_hash(const void *key) {
-    const char* s = *(const char**)key;
+    const char* s = key;
 	size_t h = (size_t) *s;
 	return h;
 }
 
 bool ht_str_eq(const void*a, const void* b){
-    return strcmp(*(const char**)a, *(const char**)b) == 0;
+    return strcmp(a,b) == 0;
 }
 
 static inline size_t ht_char_hash(const void *key){
@@ -82,7 +84,7 @@ void ht_clear(HashTab* h){
     }
 }
 
-size_t ht_get(HashTab h, const void** key){
+size_t ht_get(HashTab h, const void* key){
     size_t result;
 	if (!(h).size) {
 		return 0;
@@ -181,7 +183,7 @@ int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size
 		(h)->flags[(index)] = 1;
 		(h)->keys[(index)] = key_copy;
         (h)->values[(index)] = value_copy;
-        (h)->key_sizes[(index)] = key_size;
+        (h)->key_sizes[(index)] = key_size; //Здесь возникает ошибка сегментации. Я исправлю позже
 		(h)->size++;
 		return 1;
 	}
@@ -197,7 +199,7 @@ void ht_delete(HashTab* h, size_t index){
 void ht_destroy(HashTab* h){
     for (size_t i = 0; i < h->capacity; i++){
         if(h->flags[i] == 1){
-            free(h->values[ht_get(*h,h->keys[i])]);
+            free(h->values[i]);
             free(h->keys[i]);
         }
     }
@@ -238,13 +240,17 @@ int main(int argc, char *argv[]){
         if(!isalpha(buff)){
             if(word_buff && size!=0){
                 word_buff[size] = '\0';
-                i = ht_get(Word_Hash_Tab,&word_buff);
+
+                char* word_copy = malloc(strlen(word_buff)+1);
+                strcpy(word_copy,word_buff);
+                i = ht_get(Word_Hash_Tab,word_copy);
                 if(!ht_valid(Word_Hash_Tab,i)){
                     int val = 1;
-                    ht_put(&Word_Hash_Tab,&word_buff,sizeof(word_buff),&val,sizeof(1));
+                    ht_put(&Word_Hash_Tab,word_copy,strlen(word_copy)+1,&val,sizeof(int));
                 }else{
                     int val = *(int*)Word_Hash_Tab.values[i] + 1;
-                    ht_put(&Word_Hash_Tab, &word_buff, sizeof(word_buff),&val,sizeof(val));
+                    ht_put(&Word_Hash_Tab, word_copy, strlen(word_copy)+1,&val,sizeof(int));
+                    free(word_copy);
                 }
                 word_buff = NULL;
                 capacity = 0;
@@ -267,13 +273,18 @@ int main(int argc, char *argv[]){
         }
     }
     if(word_buff && size!=0){
-        i = ht_get(Word_Hash_Tab,&word_buff);
+        word_buff[size] = '\0';
+
+        char* word_copy = malloc(strlen(word_buff)+1);
+        strcpy(word_copy,word_buff);
+        i = ht_get(Word_Hash_Tab,&word_copy);
         if(!ht_valid(Word_Hash_Tab,i)){
             int val = 1;
-            ht_put(&Word_Hash_Tab,&word_buff,sizeof(word_buff),&val,sizeof(1));
+            ht_put(&Word_Hash_Tab,&word_buff,sizeof(char*),&val,sizeof(int));
         }else{
             int val = *(int*)Word_Hash_Tab.values[i] + 1;
-            ht_put(&Word_Hash_Tab, &word_buff, sizeof(word_buff),&val,sizeof(val));
+            ht_put(&Word_Hash_Tab, &word_buff, sizeof(char*),&val,sizeof(int));
+            free(word_copy);
         }
         word_buff = NULL;
         capacity = 0;
