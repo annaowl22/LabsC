@@ -49,10 +49,17 @@ void process_zip(FILE *file) {
             }
             
             // Читаем имя файла
-            char filename[256];
-            fread(filename, header.name_length, 1, file);
-            filename[header.name_length] = '\0';
-            printf("%s\n", filename);
+            if(header.name_length < 256){
+                char filename[256];
+                fread(filename, header.name_length, 1, file);
+                filename[header.name_length] = '\0';
+                printf("%s\n", filename);
+            }else{
+                char filename[1024];
+                fread(filename, header.name_length, 1, file);
+                filename[header.name_length] = '\0';
+                printf("%s\n", filename);
+            }
             
             // Пропускаем дополнительные поля и данные файла
             fseek(file, header.extra_length + header.compressed_size, SEEK_CUR);
