@@ -60,7 +60,6 @@ typedef struct HashTab
     char *flags;
     void* *keys;
     void* *values;
-    size_t* key_sizes;
     size_t(*hash)(const void*);
     bool(*equals)(const void*, const void*);
 } HashTab;
@@ -70,7 +69,6 @@ void ht_init(HashTab* h, size_t(*hash)(const void*), bool(*equals)(const void*, 
     h->max_size = 0; 
     h->capacity = 0;
 	h->flags = NULL;
-    h->key_sizes = NULL;
 	h->keys = NULL; 
 	h->values = NULL;
     h->hash = hash;
@@ -183,7 +181,6 @@ int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size
 		(h)->flags[(index)] = 1;
 		(h)->keys[(index)] = key_copy;
         (h)->values[(index)] = value_copy;
-        (h)->key_sizes[(index)] = key_size; //Здесь возникает ошибка сегментации. Я исправлю позже
 		(h)->size++;
 		return 1;
 	}
@@ -203,7 +200,6 @@ void ht_destroy(HashTab* h){
             free(h->keys[i]);
         }
     }
-    free(h->key_sizes);
     free(h->flags);
     free(h->keys);
     free(h->values);
