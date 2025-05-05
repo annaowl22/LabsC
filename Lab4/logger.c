@@ -21,11 +21,20 @@ static FILE *log_file = NULL;
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t log_thread;
 static bool log_thread_running = false;
+static LogLevel current_log_level = LOG_INFO;
 
 // Очередь
 static LogEntry log_queue[1024];
 static int log_queue_front = 0;
 static int log_queue_rear = 0;
+
+void log_set_level(LogLevel level){
+    current_log_level = level;
+}
+
+LogLevel log_get_level(){
+    return current_log_level;
+}
 
 // Добавление сообщения в очередь
 void log_enqueue(LogLevel level, const char *message, void* callstack, int frames) {
