@@ -14,3 +14,35 @@ Stack trace:
   ./lab4comp(+0x17b4) [0x575b2ceac7b4]
   /lib/x86_64-linux-gnu/libpthread.so.0(+0x8609) [0x71ab86efe609]
   /lib/x86_64-linux-gnu/libc.so.6(clone+0x43) [0x71ab86e23353]
+[2025-05-05 06:43:52] [DEBUG] Сообщение об отладке
+[2025-05-05 06:43:52] [INFO] Программа начала выполнение
+[2025-05-05 06:43:52] [WARNING] Warning!
+[2025-05-05 06:43:52] [ERROR] Critical error occurred!
+Stack trace:
+  ./lab4comp(+0x17b4) [0x5c4830ca37b4]
+  /lib/x86_64-linux-gnu/libpthread.so.0(+0x8609) [0x7a6739763609]
+  /lib/x86_64-linux-gnu/libc.so.6(clone+0x43) [0x7a6739688353]
+[2025-05-05 06:45:56] [DEBUG] Сообщение об отладке
+[2025-05-05 06:45:56] [INFO] Программа начала выполнение
+[2025-05-05 06:45:56] [WARNING] Warning!
+[2025-05-05 06:45:56] [ERROR] Critical error occurred!
+Stack trace:
+  ./lab4comp(+0x1794) [0x5cf482d75794]
+  /lib/x86_64-linux-gnu/libpthread.so.0(+0x8609) [0x723085015609]
+  /lib/x86_64-linux-gnu/libc.so.6(clone+0x43) [0x723084f3a353]
+[2025-05-05 10:02:38] [DEBUG] Сообщение об отладке
+[2025-05-05 10:02:38] [INFO] Программа начала выполнение
+[2025-05-05 10:02:38] [WARNING] Warning!
+[2025-05-05 10:02:38] [ERROR] Critical error occurred!
+Stack trace:
+  ./lab4comp(+0x1802) [0x5ed65ca95802]
+  /lib/x86_64-linux-gnu/libpthread.so.0(+0x8609) [0x788ed41f8609]
+  /lib/x86_64-linux-gnu/libc.so.6(clone+0x43) [0x788ed411d353]
+[2025-05-05 11:14:15] [DEBUG] Сообщение об отладке
+[2025-05-05 11:14:15] [INFO] Программа начала выполнение
+[2025-05-05 11:14:15] [WARNING] Warning!
+[2025-05-05 11:14:15] [ERROR] Critical error occurred!
+Stack trace:
+ ./lab4comp(main+0x91) [0x5743e891545a]
+ /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x6ffd4d9fe083]
+ ./lab4comp(_start+0x2e) [0x5743e891530e]

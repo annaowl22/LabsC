@@ -13,6 +13,8 @@
 typedef struct {
     LogLevel level;
     char message[MAX_LOG_MSG_LEN];
+    void* callstack[50];
+    int callstack_size;
 } LogEntry;
 
 static FILE *log_file = NULL;
@@ -26,12 +28,18 @@ static int log_queue_front = 0;
 static int log_queue_rear = 0;
 
 // Добавление сообщения в очередь
-static void log_enqueue(LogLevel level, const char *message) {
+void log_enqueue(LogLevel level, const char *message, void* callstack, int frames) {
     pthread_mutex_lock(&log_mutex);
     if ((log_queue_rear + 1) % 1024 != log_queue_front) {
         LogEntry entry;
         entry.level = level;
         strncpy(entry.message, message, MAX_LOG_MSG_LEN - 1);
+        if(level == LOG_ERROR && callstack && frames > 0){
+            memcpy(entry.callstack, callstack, sizeof(void*)*frames);
+            entry.callstack_size = frames;
+        }else{
+            entry.callstack_size = 0;
+        }
         log_queue[log_queue_rear] = entry;
         log_queue_rear = (log_queue_rear + 1) % 1024;
     }
@@ -66,27 +74,27 @@ static void *log_thread_func(void *arg) {
                 default:          level_str = "UNKNOWN"; break;
             }
 
-            time_t now = time(NULL);
             char timestamp[20];
-            strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+            struct tm *utc;
+            const time_t timer = time(NULL);
+            utc = localtime(&timer);
+            utc->tm_hour += 3;
+            time_t rus = mktime(utc);
+            utc = localtime(&rus);
+            strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", utc);
 
             fprintf(log_file, "[%s] [%s] %s\n", timestamp, level_str, entry.message);
 
             // Для ERROR добавляем стек вызовов
-            if (entry.level == LOG_ERROR) {
-                void *callstack[50];
-                int frames = backtrace(callstack, 50);
-                char **symbols = backtrace_symbols(callstack, frames);
+            if (entry.level == LOG_ERROR && entry.callstack_size > 0) {
+                char** symbols = backtrace_symbols(entry.callstack, entry.callstack_size);
                 fprintf(log_file, "Stack trace:\n");
-                for (int i = 0; i < frames; i++) {
-                    fprintf(log_file, "  %s\n", symbols[i]);
-                }
-                free(symbols);
+                for (int i = 0; i < entry.callstack_size; i++){
+                    fprintf(log_file, " %s\n",symbols[i]);
+                } 
             }
 
             fflush(log_file);  // Сброс буфера
-        } else {
-            sleep(1000);
         }
     }
     return NULL;
@@ -118,7 +126,7 @@ void logger_log(LogLevel level, const char *format, ...) {
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    log_enqueue(level, buffer);
+    log_enqueue(level, buffer,NULL,0);
 }
 
 // Завершение работы логгера
