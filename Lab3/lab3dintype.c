@@ -9,6 +9,7 @@
 
 static inline size_t ht_str_hash(const void *key) {
     const char* s = key;
+    if(!s) return 0;
 	size_t h = (size_t) *s;
 	return h;
 }
@@ -145,7 +146,7 @@ bool ht_reserve(HashTab* h, size_t new_capacity){
 }
 
 bool ht_valid(HashTab h, size_t i){
-    return (h).flags && (h).flags[i] == 1;
+    return (h).flags && (h).flags[i] == 1 && (i < h.capacity) && h.keys[i];
 }
 
 int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size_t value_size){
@@ -239,6 +240,10 @@ int main(int argc, char *argv[]){
 
                 char* word_copy = malloc(strlen(word_buff)+1);
                 strcpy(word_copy,word_buff);
+                if(!word_copy){
+                    printf("Не удалось скопировать слово\n");
+                    continue;
+                }
                 i = ht_get(Word_Hash_Tab,word_copy);
                 if(!ht_valid(Word_Hash_Tab,i)){
                     int val = 1;
@@ -273,7 +278,7 @@ int main(int argc, char *argv[]){
 
         char* word_copy = malloc(strlen(word_buff)+1);
         strcpy(word_copy,word_buff);
-        i = ht_get(Word_Hash_Tab,&word_copy);
+        i = ht_get(Word_Hash_Tab,word_copy);
         if(!ht_valid(Word_Hash_Tab,i)){
             int val = 1;
             ht_put(&Word_Hash_Tab,&word_buff,sizeof(char*),&val,sizeof(int));
@@ -290,9 +295,9 @@ int main(int argc, char *argv[]){
     fclose(input_file);
 
     for(size_t ind = 0; ind < Word_Hash_Tab.capacity;ind++){
-        if(!ht_valid(Word_Hash_Tab,ind)||strlen(Word_Hash_Tab.keys[ind])==0) continue;
-        printf("Слово: %s\n", *(const char**)Word_Hash_Tab.keys[ind]);
-        i = ht_get(Word_Hash_Tab, *(const char**)Word_Hash_Tab.keys[ind]);
+        if(!ht_valid(Word_Hash_Tab,ind)) continue;
+        printf("Слово: %s\n", (const char*)Word_Hash_Tab.keys[ind]);
+        i = ht_get(Word_Hash_Tab, (const char*)Word_Hash_Tab.keys[ind]);
         printf("В тексте раз: %d\n", *(int*)Word_Hash_Tab.values[i]);
     }
     ht_destroy(&Word_Hash_Tab);
