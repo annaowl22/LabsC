@@ -74,3 +74,31 @@ Stack trace:
  ./lab4comp(main+0x1cb) [0x5f1fd13115b4]
  /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x7c72f3a03083]
  ./lab4comp(_start+0x2e) [0x5f1fd131132e]
+[2025-05-06 09:03:37] [INFO] Программа начала выполнение
+[2025-05-06 09:03:37] [WARNING] Warning!
+[2025-05-06 09:03:37] [ERROR] Critical error occurred!
+Stack trace:
+ ./lab4comp(main+0x1cb) [0x6338fa7de5b4]
+ /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x7428a84b9083]
+ ./lab4comp(_start+0x2e) [0x6338fa7de32e]
+[2025-05-06 09:03:50] [INFO] Программа начала выполнение
+[2025-05-06 09:03:50] [WARNING] Warning!
+[2025-05-06 09:03:50] [ERROR] Critical error occurred!
+Stack trace:
+ ./lab4comp(main+0x1cb) [0x5e6d853195b4]
+ /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x7e1c63a09083]
+ ./lab4comp(_start+0x2e) [0x5e6d8531932e]
+[2025-05-06 06:26:33] [INFO] Программа начала выполнение
+[2025-05-06 06:26:33] [WARNING] Warning!
+[2025-05-06 06:26:33] [ERROR] Critical error occurred!
+Stack trace:
+ ./lab4comp(main+0x1f2) [0x5f65b12ba5bb]
+ /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x73e3e4e4d083]
+ ./lab4comp(_start+0x2e) [0x5f65b12ba30e]
+[2025-05-06 06:26:45] [INFO] Программа начала выполнение
+[2025-05-06 06:26:45] [WARNING] Warning!
+[2025-05-06 06:26:45] [ERROR] Critical error occurred!
+Stack trace:
+ ./lab4comp(main+0x1f2) [0x58423f11a5bb]
+ /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf3) [0x7838f2229083]
+ ./lab4comp(_start+0x2e) [0x58423f11a30e]

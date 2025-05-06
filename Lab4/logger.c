@@ -15,6 +15,7 @@ typedef struct {
     char message[MAX_LOG_MSG_LEN];
     void* callstack[50];
     int callstack_size;
+    time_t time;
 } LogEntry;
 
 static FILE *log_file = NULL;
@@ -37,7 +38,7 @@ LogLevel log_get_level(){
 }
 
 // Добавление сообщения в очередь
-void log_enqueue(LogLevel level, const char *message, void* callstack, int frames) {
+void log_enqueue(LogLevel level, const char *message, void* callstack, int frames, time_t time) {
     pthread_mutex_lock(&log_mutex);
     if ((log_queue_rear + 1) % 1024 != log_queue_front) {
         LogEntry entry;
@@ -49,6 +50,7 @@ void log_enqueue(LogLevel level, const char *message, void* callstack, int frame
         }else{
             entry.callstack_size = 0;
         }
+        entry.time = time;
         log_queue[log_queue_rear] = entry;
         log_queue_rear = (log_queue_rear + 1) % 1024;
     }
@@ -84,13 +86,7 @@ static void *log_thread_func(void *arg) {
             }
 
             char timestamp[20];
-            struct tm *utc;
-            const time_t timer = time(NULL);
-            utc = localtime(&timer);
-            utc->tm_hour += 3;
-            time_t rus = mktime(utc);
-            utc = localtime(&rus);
-            strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", utc);
+            strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&entry.time));
 
             fprintf(log_file, "[%s] [%s] %s\n", timestamp, level_str, entry.message);
 
@@ -128,14 +124,14 @@ bool logger_init(const char *filename) {
 }
 
 // Запись сообщения в лог
-void logger_log(LogLevel level, const char *format, ...) {
+void logger_log(LogLevel level, time_t time, const char *format, ...) {
     char buffer[MAX_LOG_MSG_LEN];
     va_list args;
     va_start(args, format);
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    log_enqueue(level, buffer,NULL,0);
+    log_enqueue(level, buffer,NULL,0,time);
 }
 
 // Завершение работы логгера
