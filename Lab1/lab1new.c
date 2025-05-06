@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #pragma pack(push, 1)
 
@@ -55,10 +56,11 @@ void process_zip(FILE *file) {
                 filename[header.name_length] = '\0';
                 printf("%s\n", filename);
             }else{
-                char filename[1024];
+                char* filename = malloc(header.name_length+1);
                 fread(filename, header.name_length, 1, file);
                 filename[header.name_length] = '\0';
                 printf("%s\n", filename);
+                free(filename);
             }
             
             // Пропускаем дополнительные поля и данные файла
