@@ -26,7 +26,46 @@ static void set_nonblocking(int fd){
     }
 }
 
-int main(){
+void send_file(int client_fd, const char *filepath){
+    FILE *file = fopen(filepath, "rb");
+    if (!file){
+        perror("fopen");
+        printf("Полный путь: %s\n",filepath);
+        if(errno == ENOENT){
+            const char *ermess = "404: Файл с данным именем не найден\n";
+            write(client_fd, ermess, strlen(ermess));
+        }else{
+            const char *ermess = "403: Файл недоступен для чтения. Может быть временно, попробуйте ещё раз позже\n";
+            write(client_fd, ermess, strlen(ermess));
+        }
+        return;
+    }
+
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_read;
+
+    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file))>0){
+        if (write(client_fd, buffer, bytes_read)!= bytes_read){
+            perror("write");
+            break;
+        }
+    }
+    write(client_fd,"\n",1);
+    fclose(file);
+}
+
+int main(int argc, char* argv[]){
+    if (argc < 3){
+        fprintf(stderr, "Не выбран адрес и порт\n");
+        exit(EXIT_FAILURE);
+    }
+    if (argc < 4){
+        fprintf(stderr, "Не выбрана директория\n");
+        exit(EXIT_FAILURE);
+    }
+    const char *ip = argv[1];
+    int port = atoi(argv[2]);
+    const char *dir = argv[3];
     int server_fd, client_fd, epoll_fd;
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
@@ -40,8 +79,12 @@ int main(){
     }
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(PORT);
+    server_addr.sin_port = htons(port);
+    if (inet_pton(AF_INET, ip, &server_addr.sin_addr) <= 0){
+        perror("inet_pton");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
 
     if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr))){
         perror("bind");
@@ -67,13 +110,13 @@ int main(){
     ev.events = EPOLLIN | EPOLLET;
     ev.data.fd = server_fd;
     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &ev) == -1){
-        perror("epoll_ctl");
+        perror("epoll_ctl: server");
         close(server_fd);
         close(epoll_fd);
         exit(EXIT_FAILURE);
     }
 
-    printf("Сервер запущен на порте %d\n", PORT);
+    printf("Сервер запущен на порте %d\n", port);
 
     while(1){
         int nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
@@ -112,7 +155,16 @@ int main(){
                     close(events[i].data.fd);
                 }else{
                     buffer[n] = '\0';
-                    write(events[i].data.fd, buffer, n);
+                    printf("Клиент %d запросил файл %s", client_addr.sin_port, buffer);
+                    char *filename = strtok(buffer, "\n");
+                    if (strstr(filename, "..")){
+                        const char *errmess = "Не пытайтесь покинуть директорию\n";
+                        write(client_fd,errmess,strlen(errmess));
+                    }else{
+                        char filepath[BUFFER_SIZE+sizeof(dir)];
+                        snprintf(filepath, sizeof(filepath), "%s/%s",dir,filename);
+                        send_file(events[i].data.fd, filepath);
+                    }
                 }
             }
         }
