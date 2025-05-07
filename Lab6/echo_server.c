@@ -9,9 +9,8 @@
 #include <errno.h>
 #include <unistd.h>
 
-#define MAX_EVENTS 10
+#define MAX_EVENTS 100
 #define BUFFER_SIZE 1024
-#define PORT 8080
 
 static void set_nonblocking(int fd){
     const int flags = fcntl(fd, F_GETFL, 0);
