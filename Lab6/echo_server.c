@@ -32,14 +32,24 @@ void send_file(int client_fd, const char *filepath){
         perror("fopen");
         printf("Полный путь: %s\n",filepath);
         if(errno == ENOENT){
-            const char *ermess = "404: Файл с данным именем не найден\n";
-            write(client_fd, ermess, strlen(ermess));
+            const char *response = "HTTP/1.1 404 Not Found\n"
+                                   "Content-Type: text/plain\n"
+                                   "\n"
+                                   "Файл с данным именем не найден\n";
+            write(client_fd,response, strlen(response));
         }else{
-            const char *ermess = "403: Файл недоступен для чтения. Может быть временно, попробуйте ещё раз позже\n";
-            write(client_fd, ermess, strlen(ermess));
+            const char *response = "HTTP/1.1 403 Forbidden\n"
+                                 "Content-Type: text/plain\n"
+                                 "\n"
+                                 "403: Файл недоступен для чтения. Может быть временно, попробуйте ещё раз позже\n";
+            write(client_fd, response, strlen(response));
         }
         return;
     }
+    const char *header = "HTTP/1.1 200 OK\n"
+                         "Content-Type: text/plain\r\n"
+                         "\n";
+    write(client_fd,header,strlen(header));
 
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read;
@@ -156,14 +166,17 @@ int main(int argc, char* argv[]){
                 }else{
                     buffer[n] = '\0';
                     printf("Клиент %d запросил файл %s", client_addr.sin_port, buffer);
-                    char *filename = strtok(buffer, "\n");
+                    char *method = strtok(buffer, " ");
+                    char *filename = strtok(NULL, " ");
                     if (strstr(filename, "..")){
                         const char *errmess = "Не пытайтесь покинуть директорию\n";
                         write(client_fd,errmess,strlen(errmess));
                     }else{
+                        if(method && filename && strcmp(method, "GET") == 0){
                         char filepath[BUFFER_SIZE+sizeof(dir)];
                         snprintf(filepath, sizeof(filepath), "%s/%s",dir,filename);
                         send_file(events[i].data.fd, filepath);
+                        }
                     }
                 }
             }
