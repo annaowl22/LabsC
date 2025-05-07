@@ -75,6 +75,10 @@ int main(int argc, char* argv[]){
     }
     const char *ip = argv[1];
     int port = atoi(argv[2]);
+    if(port < 1 || port > 65535){
+        fprintf(stderr, "Порт должен быть числом от 1 до 65535\n");
+        exit(EXIT_FAILURE);
+    }
     const char *dir = argv[3];
     int server_fd, client_fd, epoll_fd;
     struct sockaddr_in server_addr, client_addr;
