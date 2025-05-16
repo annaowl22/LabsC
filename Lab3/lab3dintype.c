@@ -106,7 +106,7 @@ bool ht_reserve(HashTab* h, size_t new_capacity){
 	if (ht_new_capacity <= (h)->capacity) {
 		ht_new_capacity <<= 1;
 	}
-	char *ht_new_flags = malloc(ht_new_capacity);
+	char *ht_new_flags = calloc(ht_new_capacity,sizeof(char));
 	if (!ht_new_flags) {
 		return false;
 	}
@@ -121,7 +121,6 @@ bool ht_reserve(HashTab* h, size_t new_capacity){
 		free(ht_new_flags);
 		return false;
 	}
-	memset(ht_new_flags, 0, ht_new_capacity);
 	size_t ht_mask = ht_new_capacity - 1;
 	for (size_t ht_i = 0; ht_i < (h)->capacity; ht_i++) {
 		if ((h)->flags[ht_i] != 1) continue;
