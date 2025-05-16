@@ -6,6 +6,9 @@
 #include <ctype.h>
 #include <math.h>
 
+#define UNINITIALIZED 0
+#define INITIALAZED 1
+#define DELETED 2
 
 static inline size_t ht_str_hash(const void *key) {
     const char* s = key;
@@ -82,7 +85,7 @@ void ht_init(HashTab* h, size_t(*hash)(const void*), bool(*equals)(const void*, 
 void ht_clear(HashTab* h){
     h->size = 0;
     if(h->flags){
-        memset(h->flags, 0, h->capacity);
+        memset(h->flags, UNINITIALIZED, h->capacity);
     }
 }
 
@@ -94,7 +97,7 @@ size_t ht_get(HashTab h, const void* key){
 	size_t ht_mask = (h).capacity - 1;
 	result = h.hash(key) & ht_mask;
 	size_t ht_step = 0;
-	while ((h).flags[(result)] == 2 || ((h).flags[(result)] == 1 && !h.equals((h).keys[(result)], (key)))) {
+	while ((h).flags[(result)] == DELETED || ((h).flags[(result)] == INITIALAZED && !h.equals((h).keys[(result)], (key)))) {
 		(result) = ((result) + ++ht_step) & ht_mask;
 	}
     return result;
@@ -148,7 +151,7 @@ bool ht_reserve(HashTab* h, size_t new_capacity){
 }
 
 bool ht_valid(HashTab h, size_t i){
-    return (h).flags && (h).flags[i] == 1 && (i < h.capacity) && h.keys[i];
+    return (h).flags && (h).flags[i] == INITIALAZED && (i < h.capacity) && h.keys[i];
 }
 
 int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size_t value_size){
@@ -161,10 +164,10 @@ int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size
 	size_t ht_mask = (h)->capacity - 1;
 	size_t index = h->hash(key) & ht_mask;
 	size_t ht_step = 0;
-	while ((h)->flags[(index)] == 2 || ((h)->flags[(index)] == 1 && !h->equals((h)->keys[(index)], (key)))) {
+	while ((h)->flags[(index)] == DELETED || ((h)->flags[(index)] == INITIALAZED && !h->equals((h)->keys[(index)], (key)))) {
 		(index) = ((index) + ++ht_step) & ht_mask;
 	}
-	if ((h)->flags[(index)] == 1) {
+	if ((h)->flags[(index)] == INITIALAZED) {
 		free(h->values[index]);
         void* new_value = malloc(value_size);
         memcpy(new_value, value, value_size);
@@ -181,7 +184,7 @@ int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size
         memcpy(key_copy, key, key_size);
         memcpy(value_copy, value, value_size);
 
-		(h)->flags[(index)] = 1;
+		(h)->flags[(index)] = INITIALAZED;
 		(h)->keys[(index)] = key_copy;
         (h)->values[(index)] = value_copy;
 		(h)->size++;
@@ -192,13 +195,13 @@ int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size
 
 
 void ht_delete(HashTab* h, size_t index){
-    h->flags[index] = 2;
+    h->flags[index] = DELETED;
     h->size--;
 }
 
 void ht_destroy(HashTab* h){
     for (size_t i = 0; i < h->capacity; i++){
-        if(h->flags[i] == 1){
+        if(h->flags[i] == INITIALAZED){
             free(h->values[i]);
             free(h->keys[i]);
         }
