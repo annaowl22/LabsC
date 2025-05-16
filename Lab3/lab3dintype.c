@@ -10,7 +10,10 @@
 static inline size_t ht_str_hash(const void *key) {
     const char* s = key;
     if(!s) return 0;
-	size_t h = (size_t) *s;
+	size_t h = 0;
+    while(*s){
+        h += (size_t)*s++;
+    }
 	return h;
 }
 
