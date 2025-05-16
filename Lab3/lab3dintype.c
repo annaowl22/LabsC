@@ -10,14 +10,14 @@
 #define INITIALAZED 1
 #define DELETED 2
 
-static inline size_t ht_str_hash(const void *key) {
+static inline size_t ht_str_hash(const void *key, size_t hash_size) {
     const char* s = key;
     if(!s) return 0;
 	size_t h = 0;
     while(*s){
         h += (size_t)*s++;
     }
-	return h;
+	return h & (hash_size - 1);
 }
 
 bool ht_str_eq(const void*a, const void* b){
@@ -67,11 +67,11 @@ typedef struct HashTab
     char *flags;
     void* *keys;
     void* *values;
-    size_t(*hash)(const void*);
+    size_t(*hash)(const void*, size_t);
     bool(*equals)(const void*, const void*);
 } HashTab;
 
-void ht_init(HashTab* h, size_t(*hash)(const void*), bool(*equals)(const void*, const void*)){
+void ht_init(HashTab* h, size_t(*hash)(const void*, size_t), bool(*equals)(const void*, const void*)){
     h->size = 0;
     h->max_size = 0; 
     h->capacity = 0;
@@ -94,11 +94,11 @@ size_t ht_get(HashTab h, const void* key){
 	if (!(h).size) {
 		return 0;
 	}
-	size_t ht_mask = (h).capacity - 1;
-	result = h.hash(key) & ht_mask;
+	size_t hash_size = (h).capacity;
+	result = h.hash(key, hash_size);
 	size_t ht_step = 0;
 	while ((h).flags[(result)] == DELETED || ((h).flags[(result)] == INITIALAZED && !h.equals((h).keys[(result)], (key)))) {
-		(result) = ((result) + ++ht_step) & ht_mask;
+		(result) = ((result) + ++ht_step) & (hash_size - 1);
 	}
     return result;
 } 
@@ -127,13 +127,13 @@ bool ht_reserve(HashTab* h, size_t new_capacity){
 		free(ht_new_flags);
 		return false;
 	}
-	size_t ht_mask = ht_new_capacity - 1;
+	size_t hash_size = ht_new_capacity;
 	for (size_t ht_i = 0; ht_i < (h)->capacity; ht_i++) {
 		if ((h)->flags[ht_i] != 1) continue;
-		size_t ht_j = h->hash((h)->keys[ht_i]) & ht_mask;
+		size_t ht_j = h->hash((h)->keys[ht_i], hash_size);
 		size_t ht_step = 0;
 		while (ht_new_flags[ht_j]) {
-			ht_j = (ht_j + ++ht_step) & ht_mask;
+			ht_j = (ht_j + ++ht_step) & (hash_size - 1);
 		}
 		ht_new_flags[ht_j] = 1;
 		ht_new_keys[ht_j] = (h)->keys[ht_i];
@@ -161,11 +161,11 @@ int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size
 	if (!ht_success) {
 		return -1;
 	}
-	size_t ht_mask = (h)->capacity - 1;
-	size_t index = h->hash(key) & ht_mask;
+	size_t hash_size = (h)->capacity;
+	size_t index = h->hash(key, hash_size);
 	size_t ht_step = 0;
 	while ((h)->flags[(index)] == DELETED || ((h)->flags[(index)] == INITIALAZED && !h->equals((h)->keys[(index)], (key)))) {
-		(index) = ((index) + ++ht_step) & ht_mask;
+		(index) = ((index) + ++ht_step) & (hash_size - 1);
 	}
 	if ((h)->flags[(index)] == INITIALAZED) {
 		free(h->values[index]);
