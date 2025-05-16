@@ -96,11 +96,14 @@ size_t ht_get(HashTab h, const void* key){
 	}
 	size_t hash_size = (h).capacity;
 	result = h.hash(key, hash_size);
-	size_t ht_step = 0;
-	while ((h).flags[(result)] == DELETED || ((h).flags[(result)] == INITIALAZED && !h.equals((h).keys[(result)], (key)))) {
-		(result) = ((result) + ++ht_step) & (hash_size - 1);
-	}
-    return result;
+	for(size_t ht_step = 0; ht_step < (h).capacity; ht_step++){
+        if ((h).flags[(result)] == 0)
+            return 0;
+        if ((h).flags[(result)] == 1 && h.equals((h).keys[(result)], (key)))
+            return result;
+        (result) = ((result) + ht_step + 1) & (hash_size - 1);
+    }
+    return 0;
 } 
 
 bool ht_reserve(HashTab* h, size_t new_capacity){
