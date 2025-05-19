@@ -36,7 +36,7 @@ void read_config() {
     }
     fclose(conf);
     if(!target_file){
-        fprintf(stderr,"No file in config");
+        syslog(LOG_INFO, "The file asked doesnt exist");
         exit(EXIT_FAILURE);
     }
 }
