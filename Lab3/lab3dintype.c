@@ -61,12 +61,16 @@ bool ht_char_eq(const void* a, const void* b){
 #endif
 
 //Структура Хэш-таблицы
+typedef struct HashTabNode {
+    char flag;
+    void* key;
+    void* value;
+}HashTabNode;
+
 typedef struct HashTab
 {
     size_t size, max_size, capacity;
-    char *flags;
-    void* *keys;
-    void* *values;
+    HashTabNode *data;
     size_t(*hash)(const void*, size_t);
     bool(*equals)(const void*, const void*);
 } HashTab;
@@ -75,32 +79,34 @@ void ht_init(HashTab* h, size_t(*hash)(const void*, size_t), bool(*equals)(const
     h->size = 0;
     h->max_size = 0; 
     h->capacity = 0;
-	h->flags = NULL;
-	h->keys = NULL; 
-	h->values = NULL;
+	h->data = NULL;
     h->hash = hash;
     h->equals = equals;
 }
 
 void ht_clear(HashTab* h){
     h->size = 0;
-    if(h->flags){
-        memset(h->flags, UNINITIALIZED, h->capacity);
+    if(h->data){
+        for(size_t i = 0; i < h->capacity; i++){
+            h->data[i].flag = 0;
+        }
     }
 }
 
 size_t ht_get(HashTab h, const void* key){
     size_t result;
-	if (!(h).size) {
+	if (!(h).size || !(h).data) {
 		return 0;
 	}
 	size_t hash_size = (h).capacity;
 	result = h.hash(key, hash_size);
 	for(size_t ht_step = 0; ht_step < (h).capacity; ht_step++){
-        if ((h).flags[(result)] == 0)
+        if ((h).data[(result)].flag == UNINITIALIZED){
             return 0;
-        if ((h).flags[(result)] == 1 && h.equals((h).keys[(result)], (key)))
+        }
+        if ((h).data[(result)].flag == INITIALAZED && h.equals((h).data[(result)].key, (key))){
             return result;
+        }
         (result) = ((result) + ht_step + 1) & (hash_size - 1);
     }
     return 0;
@@ -115,46 +121,32 @@ bool ht_reserve(HashTab* h, size_t new_capacity){
 	if (ht_new_capacity <= (h)->capacity) {
 		ht_new_capacity <<= 1;
 	}
-	char *ht_new_flags = calloc(ht_new_capacity,sizeof(char));
-	if (!ht_new_flags) {
+	HashTabNode *new_data = calloc(ht_new_capacity,sizeof(HashTabNode));
+	if (!new_data) {
 		return false;
 	}
-	void* *ht_new_keys = malloc(ht_new_capacity * sizeof(void*));
-	if (!ht_new_keys) {
-		free(ht_new_flags);
-		return false;
-	}
-	void* *ht_new_values = malloc(ht_new_capacity * sizeof(void*));
-	if (!ht_new_values) {
-		free(ht_new_keys);
-		free(ht_new_flags);
-		return false;
-	}
+
 	size_t hash_size = ht_new_capacity;
 	for (size_t ht_i = 0; ht_i < (h)->capacity; ht_i++) {
-		if ((h)->flags[ht_i] != 1) continue;
-		size_t ht_j = h->hash((h)->keys[ht_i], hash_size);
+		if ((h)->data[ht_i].flag != INITIALAZED) continue;
+		size_t ht_j = h->hash((h)->data[ht_i].key, hash_size);
 		size_t ht_step = 0;
-		while (ht_new_flags[ht_j]) {
+		while (new_data[ht_j].flag) {
 			ht_j = (ht_j + ++ht_step) & (hash_size - 1);
 		}
-		ht_new_flags[ht_j] = 1;
-		ht_new_keys[ht_j] = (h)->keys[ht_i];
-		ht_new_values[ht_j] = (h)->values[ht_i];
+		new_data[ht_j].flag = 1;
+		new_data[ht_j].key = (h)->data[ht_i].key;
+		new_data[ht_j].value = (h)->data[ht_i].value;
 	}
-	free((h)->values);
-	free((h)->keys);
-	free((h)->flags);
-	(h)->flags = ht_new_flags;
-	(h)->keys = ht_new_keys;
-	(h)->values = ht_new_values;
+	free((h)->data);
+	(h)->data = new_data;
 	(h)->capacity = ht_new_capacity;
 	(h)->max_size = (ht_new_capacity >> 1) + (ht_new_capacity >> 2);
 	return true;
 }
 
 bool ht_valid(HashTab h, size_t i){
-    return (h).flags && (h).flags[i] == INITIALAZED && (i < h.capacity) && h.keys[i];
+    return h.data && (h).data[i].flag && (h).data[i].flag == INITIALAZED && (i < h.capacity) && h.data[i].key;
 }
 
 int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size_t value_size){
@@ -167,14 +159,14 @@ int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size
 	size_t hash_size = (h)->capacity;
 	size_t index = h->hash(key, hash_size);
 	size_t ht_step = 0;
-	while ((h)->flags[(index)] == DELETED || ((h)->flags[(index)] == INITIALAZED && !h->equals((h)->keys[(index)], (key)))) {
+	while ((h)->data[(index)].flag == DELETED || index == 0 || ((h)->data[(index)].flag == INITIALAZED && !h->equals((h)->data[(index)].key, (key)))) {
 		(index) = ((index) + ++ht_step) & (hash_size - 1);
 	}
-	if ((h)->flags[(index)] == INITIALAZED) {
-		free(h->values[index]);
+	if ((h)->data[(index)].flag == INITIALAZED) {
+		free(h->data[index].value);
         void* new_value = malloc(value_size);
         memcpy(new_value, value, value_size);
-        h->values[index] = new_value;
+        h->data[index].value = new_value;
         return 0;
 	} else {
         void* key_copy = malloc(key_size);
@@ -187,31 +179,50 @@ int ht_put(HashTab* h, const void* key, size_t key_size, const void* value, size
         memcpy(key_copy, key, key_size);
         memcpy(value_copy, value, value_size);
 
-		(h)->flags[(index)] = INITIALAZED;
-		(h)->keys[(index)] = key_copy;
-        (h)->values[(index)] = value_copy;
+		(h)->data[(index)].flag = INITIALAZED;
+		(h)->data[(index)].key = key_copy;
+        (h)->data[(index)].value = value_copy;
 		(h)->size++;
 		return 1;
 	}
 }
 
+int ht_update(HashTab* h, const void* key, const void* value, size_t value_size){
+    size_t hash_size = (h)->capacity;
+	size_t index = h->hash(key, hash_size);
+	size_t ht_step = 0;
+	while ((h)->data[(index)].flag == DELETED || index == 0 || ((h)->data[(index)].flag == INITIALAZED && !h->equals((h)->data[(index)].key, (key)))) {
+		(index) = ((index) + ++ht_step) & (hash_size - 1);
+	}
+    if((h)->data[index].flag == UNINITIALIZED){
+        return 0;
+    }
+
+    free(h->data[index].value);
+    void* new_value = malloc(value_size);
+    if(!new_value){
+        return 0;
+    }
+    memcpy(new_value, value, value_size);
+    h->data[index].value = new_value;
+    return 1;
+}
+
 
 
 void ht_delete(HashTab* h, size_t index){
-    h->flags[index] = DELETED;
+    h->data[index].flag = DELETED;
     h->size--;
 }
 
 void ht_destroy(HashTab* h){
     for (size_t i = 0; i < h->capacity; i++){
-        if(h->flags[i] == INITIALAZED){
-            free(h->values[i]);
-            free(h->keys[i]);
+        if(h->data[i].flag == INITIALAZED){
+            free(h->data[i].value);
+            free(h->data[i].key);
         }
     }
-    free(h->flags);
-    free(h->keys);
-    free(h->values);
+    free(h->data);
 }
 
 int main(int argc, char *argv[]){
@@ -253,12 +264,12 @@ int main(int argc, char *argv[]){
                     continue;
                 }
                 i = ht_get(Word_Hash_Tab,word_copy);
-                if(!ht_valid(Word_Hash_Tab,i)){
+                if(i == 0 || !ht_valid(Word_Hash_Tab,i)){
                     int val = 1;
                     ht_put(&Word_Hash_Tab,word_copy,strlen(word_copy)+1,&val,sizeof(int));
                 }else{
-                    int val = *(int*)Word_Hash_Tab.values[i] + 1;
-                    ht_put(&Word_Hash_Tab, word_copy, strlen(word_copy)+1,&val,sizeof(int));
+                    int val = *(int*)Word_Hash_Tab.data[i].value + 1;
+                    ht_update(&Word_Hash_Tab,word_copy,&val,sizeof(int));
                     free(word_copy);
                 }
                 word_buff = NULL;
@@ -289,10 +300,10 @@ int main(int argc, char *argv[]){
         i = ht_get(Word_Hash_Tab,word_copy);
         if(!ht_valid(Word_Hash_Tab,i)){
             int val = 1;
-            ht_put(&Word_Hash_Tab,&word_buff,sizeof(char*),&val,sizeof(int));
+            ht_put(&Word_Hash_Tab,&word_copy,sizeof(char*),&val,sizeof(int));
         }else{
-            int val = *(int*)Word_Hash_Tab.values[i] + 1;
-            ht_put(&Word_Hash_Tab, &word_buff, sizeof(char*),&val,sizeof(int));
+            int val = *(int*)Word_Hash_Tab.data[i].value + 1;
+            ht_update(&Word_Hash_Tab, &word_copy,&val,sizeof(int));
             free(word_copy);
         }
         word_buff = NULL;
@@ -304,9 +315,9 @@ int main(int argc, char *argv[]){
 
     for(size_t ind = 0; ind < Word_Hash_Tab.capacity;ind++){
         if(!ht_valid(Word_Hash_Tab,ind)) continue;
-        printf("Слово: %s\n", (const char*)Word_Hash_Tab.keys[ind]);
-        i = ht_get(Word_Hash_Tab, (const char*)Word_Hash_Tab.keys[ind]);
-        printf("В тексте раз: %d\n", *(int*)Word_Hash_Tab.values[i]);
+        printf("Слово: %s\n", (const char*)Word_Hash_Tab.data[ind].key);
+        i = ht_get(Word_Hash_Tab, (const char*)Word_Hash_Tab.data[ind].key);
+        printf("В тексте раз: %d\n", *(int*)Word_Hash_Tab.data[i].value);
     }
     ht_destroy(&Word_Hash_Tab);
     
